@@ -1,0 +1,5 @@
+kafka:
+  topic: input
+  bootstrap-servers: localhost:9092
+  group-id: max-bot
+
