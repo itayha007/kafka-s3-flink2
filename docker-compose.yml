@@ -50,6 +50,20 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://broker:29092,PLAINTEXT_L://localhost:9092,PLAINTEXT_C://broker:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_L:PLAINTEXT,PLAINTEXT_C:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+  kafka-init:
+    image: python:3.10
+    container_name: kafka-init
+    networks:
+      - local-kafka
+    depends_on:
+      - broker
+    volumes:
+      - ./init-kafka.py:/app/init-kafka.py
+    working_dir: /app
+    command: >
+      sh -c "pip install kafka-python && python init-kafka.py"
+    restart: "no"
+
 
   kafka-ui:
     image: provectuslabs/kafka-ui
