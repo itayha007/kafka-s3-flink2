@@ -6,10 +6,14 @@
 #
 # I hope this helps someone out there! :)
 
-version: '3'
+version: "3.8"
+
 networks:
   local-kafka:
     driver: bridge
+  hadoop:
+    driver: bridge
+
 
 services:
   zookeeper:
@@ -58,3 +62,37 @@ services:
       - KAFKA_CLUSTERS_0_NAME=broker
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=broker:9093
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+    volumes:
+      - ./hadoop/namenode:/hadoop/dfs/name
+      - ./config/core-site.xml:/opt/hadoop-3.2.1/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/opt/hadoop-3.2.1/etc/hadoop/hdfs-site.xml
+    ports:
+      - "9870:9870" # Namenode UI
+      - "9000:9000" # HDFS service
+    networks:
+      - hadoop
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    restart: always
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+    volumes:
+      - ./hadoop/datanode:/hadoop/dfs/data
+      - ./config/core-site.xml:/opt/hadoop-3.2.1/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/opt/hadoop-3.2.1/etc/hadoop/hdfs-site.xml
+    ports:
+      - "9864:9864" # Datanode UI
+    networks:
+      - hadoop
+    depends_on:
+      - namenode
+
