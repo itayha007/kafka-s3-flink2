@@ -146,7 +146,13 @@ def produce_all():
             "bucket": BUCKET_NAME,
             "item_id": [key],
         }
-        producer.send(TOPIC_NAME, message)
+        headers = [("source.type", b"s3")]
+
+        producer.send(
+            TOPIC_NAME,
+            value=message,
+            headers=headers
+        )
 
         if msg_id % 100 == 0:
             elapsed = time.time() - start
