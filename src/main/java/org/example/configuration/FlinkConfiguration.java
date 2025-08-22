@@ -32,7 +32,7 @@ public class FlinkConfiguration {
                 .setBootstrapServers(this.kafkaConfiguration.getBootstrapServers())
                 .setTopics(this.kafkaConfiguration.getTopic())
                 .setGroupId(this.kafkaConfiguration.getGroupId())
-                .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.LATEST))
+                .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
     }
