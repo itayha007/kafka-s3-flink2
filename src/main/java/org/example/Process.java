@@ -4,17 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.flink.connector.file.sink.FileSink;
-import org.apache.flink.connector.file.sink.OutputFileConfig;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.formats.avro.typeutils.AvroKryoSerializer;
+import org.apache.flink.formats.avro.AvroWriters;
 import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo;
-import org.apache.flink.formats.parquet.ParquetWriterFactory;
-import org.apache.flink.formats.parquet.avro.ParquetAvroWriters;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.example.configuration.S3Config;
 import org.example.functions.ArrayNodeToGenericRecordMapFunction;
 import org.example.service.DataStreamService;
@@ -77,21 +73,10 @@ public class Process implements CommandLineRunner {
 
         Path outputPath = new Path(String.format("hdfs://%s:8020/flink/output", hdfsHost));
 
-        ParquetWriterFactory<GenericRecord> parquetFactory = ParquetAvroWriters
-                .forGenericRecord(ArrayNodeToGenericRecordMapFunction.getSchema())
-                .withCompressionCodecName(CompressionCodecName.SNAPPY);
-
-        OutputFileConfig fileConfig = OutputFileConfig.builder()
-                .withPartPrefix("data")
-                .withPartSuffix(".snappy.parquet")
-                .build();
-
-        records.sinkTo(
-                FileSink.forBulkFormat(outputPath, parquetFactory)
-                        .withRollingPolicy(OnCheckpointRollingPolicy.build())
-                        .withOutputFileConfig(fileConfig)
-                        .build()
-        );
+        records.sinkTo(FileSink.forBulkFormat(
+                outputPath,
+                AvroWriters.forGenericRecord(ArrayNodeToGenericRecordMapFunction.getSchema())
+        ).build());
 
         this.environment.execute();
     }
