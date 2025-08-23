@@ -41,6 +41,9 @@ public class Process implements CommandLineRunner {
 
         String hdfsHost = System.getenv().getOrDefault("HDFS_NAMENODE", "localhost");
 
+        // run HDFS operations as root so the sink can create output directories
+        System.setProperty("HADOOP_USER_NAME", "root");
+
         // ensure GenericRecord uses Avro serialization instead of Kryo's default
         this.environment.getConfig()
                 .registerTypeWithKryoSerializer(GenericData.Record.class, AvroKryoSerializer.class);
