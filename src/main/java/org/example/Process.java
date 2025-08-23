@@ -15,6 +15,7 @@ import org.example.service.S3Enricher;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,12 @@ public class Process implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        String hadoopHome = System.getenv().getOrDefault("HADOOP_HOME", "/tmp");
+        System.setProperty("hadoop.home.dir", hadoopHome);
+        new File(hadoopHome).mkdirs();
+
+        String hdfsHost = System.getenv().getOrDefault("HDFS_NAMENODE", "localhost");
+
         DataStream<GenericRecord> records = AsyncDataStream.unorderedWait(
                         this.dataStreamService.kafkaDataStream()
                                 .filter(Objects::nonNull),
@@ -43,8 +50,10 @@ public class Process implements CommandLineRunner {
                 )
                 .map(new ArrayNodeToGenericRecordMapFunction());
 
+        Path outputPath = new Path(String.format("hdfs://%s:8020/flink/output", hdfsHost));
+
         records.sinkTo(FileSink.forBulkFormat(
-                new Path("hdfs://hdfs-namenode:8020/flink/output"),
+                outputPath,
                 AvroWriters.forGenericRecord(ArrayNodeToGenericRecordMapFunction.getSchema())
         ).build());
 

@@ -86,6 +86,7 @@ services:
       - CLUSTER_NAME=local-hadoop
     ports:
       - "9870:9870"
+      - "8020:8020"
     volumes:
       - hdfs-namenode:/hadoop/dfs/namenode
 
