@@ -12,6 +12,11 @@ public class S3Config {
     private String region;
     private String accessKey;
     private String secretKey;
+    /**
+     * Maximum time in seconds to wait for S3 enrichment to complete.
+     * Defaults to five minutes to support large object downloads.
+     */
+    private long asyncTimeoutSeconds = 300L;
 
 }
 
