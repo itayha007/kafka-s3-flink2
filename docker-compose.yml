@@ -69,10 +69,10 @@ services:
       TOPIC_NAME: input
       BUCKET_NAME: dev-bucket
       S3_ENDPOINT: http://localstack:4566   # from inside docker network
-      TOTAL_MESSAGES: "100"
+      TOTAL_MESSAGES: "1000"
       LARGE_COUNT: "1"          # set 5–10 as you prefer
       LARGE_SIZE_MB: "500"
-      SMALL_SIZE_BYTES: "1024"
+      SMALL_SIZE_BYTES: "5024"
     command: >
       sh -c "pip install boto3 kafka-python && python init-all.py"
     restart: "no"

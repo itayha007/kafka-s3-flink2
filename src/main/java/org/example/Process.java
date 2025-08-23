@@ -12,6 +12,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.example.configuration.S3Config;
 import org.example.functions.ArrayNodeToGenericRecordMapFunction;
 import org.example.service.DataStreamService;
+import org.example.service.HdfsSinkApplier;
 import org.example.service.S3Enricher;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class Process implements CommandLineRunner {
     private final StreamExecutionEnvironment environment;
     private final DataStreamService dataStreamService;
+    private final HdfsSinkApplier hdfsSinkApplier;
     private final S3Config s3Config;
 
     @Override
@@ -46,12 +48,7 @@ public class Process implements CommandLineRunner {
                 .map(new ArrayNodeToGenericRecordMapFunction())
                 .returns(new GenericRecordAvroTypeInfo(ArrayNodeToGenericRecordMapFunction.getSchema()));
 
-        Path outputPath = new Path(String.format("hdfs://%s:8020/flink/output", "localhost"));
-
-        records.sinkTo(FileSink.forBulkFormat(
-                outputPath,
-                AvroWriters.forGenericRecord(ArrayNodeToGenericRecordMapFunction.getSchema())
-        ).build());
+        this.hdfsSinkApplier.apply(records);
 
         this.environment.execute();
     }

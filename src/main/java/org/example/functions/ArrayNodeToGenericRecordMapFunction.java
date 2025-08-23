@@ -8,9 +8,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.example.models.Message;
 
-/**
- * Simple mapper that wraps the JSON payload as a single field Avro GenericRecord.
- */
+
 public class ArrayNodeToGenericRecordMapFunction implements MapFunction<Message<ArrayNode>, GenericRecord> {
 
     private static final Schema SCHEMA = SchemaBuilder.record("PayloadRecord")
