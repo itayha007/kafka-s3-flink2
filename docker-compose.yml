@@ -78,7 +78,7 @@ services:
     restart: "no"
 
   hdfs-namenode:
-    image: ghcr.io/big-data-europe/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-namenode
     networks:
       - local-kafka
@@ -92,7 +92,7 @@ services:
       - hdfs-namenode:/hadoop/dfs/namenode
 
   hdfs-datanode:
-    image: ghcr.io/big-data-europe/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-datanode
     networks:
       - local-kafka
@@ -140,7 +140,7 @@ services:
       POSTGRES_DB: metastore
 
   hive-metastore:
-    image: ghcr.io/big-data-europe/hive-metastore:3.1.2
+    image: bde2020/hive-metastore:2.3.2
     container_name: hive-metastore
     networks:
       - local-kafka
@@ -158,7 +158,7 @@ services:
       METASTORE_DB_PASSWORD: hive
 
   hive-server:
-    image: ghcr.io/big-data-europe/hive:3.1.2
+    image: bde2020/hive:2.3.2
     container_name: hive-server
     networks:
       - local-kafka
