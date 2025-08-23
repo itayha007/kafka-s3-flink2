@@ -8,7 +8,7 @@ import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
-import org.example.configuration.HdfsConfiguration;
+import org.example.configuration.HadoopConfigurer;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +23,7 @@ public class Process implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String hdfsUri = HdfsConfiguration.hdfsConfiguration()
+        String hdfsUri = HadoopConfigurer.hdfsConfiguration()
                 .get("fs.defaultFS", "hdfs://namenode:9000");
 
         DataStreamSource<String> dataStreamSource =

@@ -5,7 +5,7 @@ import org.apache.hadoop.fs.Path;
 
 import java.io.File;
 
-public class HdfsConfiguration {
+public class HadoopConfigurer {
     public static Configuration hdfsConfiguration(){
         Configuration configuration = new Configuration();
         configuration.addResource(new Path(new File("./config/hdfs-site.xml").getAbsolutePath()));
