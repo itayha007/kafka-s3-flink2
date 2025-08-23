@@ -78,7 +78,7 @@
         <!-- Flink File Connector for HDFS sink -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-file</artifactId>
+            <artifactId>flink-connector-files</artifactId>
             <version>${flink.version}</version>
         </dependency>
         <!-- Hadoop filesystem support -->
