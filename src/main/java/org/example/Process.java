@@ -33,7 +33,7 @@ public class Process implements CommandLineRunner {
                                 this.s3Config.getAccessKey(),
                                 this.s3Config.getSecretKey()
                         ),
-                        30,
+                        this.s3Config.getAsyncTimeoutSeconds(),
                         TimeUnit.SECONDS,
                         5000
                 )

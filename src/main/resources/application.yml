@@ -9,3 +9,4 @@ s3:
   region: us-east-1
   access-key: test
   secret-key: test
+  async-timeout-seconds: 300
