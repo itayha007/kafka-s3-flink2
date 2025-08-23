@@ -140,7 +140,7 @@ services:
       POSTGRES_DB: metastore
 
   hive-metastore:
-    image: bde2020/hive-metastore:2.3.2
+    image: ghcr.io/big-data-europe/hive-metastore:2.3.0
     container_name: hive-metastore
     networks:
       - local-kafka
