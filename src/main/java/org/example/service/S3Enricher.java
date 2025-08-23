@@ -12,6 +12,7 @@ import org.example.models.Message;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -127,9 +128,10 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
                     .build();
             try {
                 Path tempFile = Files.createTempFile("s3-enricher-", ".tmp");
+                Files.deleteIfExists(tempFile);
                 this.s3Client.getObject(getObjectRequest, ResponseTransformer.toFile(tempFile));
                 return tempFile;
-            } catch (IOException e) {
+            } catch (IOException | SdkException e) {
                 throw new RuntimeException(e);
             }
         }, this.downloadExecutor);
