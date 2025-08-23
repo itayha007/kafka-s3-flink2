@@ -37,7 +37,13 @@ public class Process implements CommandLineRunner {
             hadoopHome = new File(System.getProperty("java.io.tmpdir"), "hadoop").getAbsolutePath();
         }
         System.setProperty("hadoop.home.dir", hadoopHome);
-        new File(hadoopHome).mkdirs();
+
+        File homeDir = new File(hadoopHome);
+        File binDir = new File(homeDir, "bin");
+        if (!binDir.exists()) {
+            binDir.mkdirs();
+            new File(binDir, "winutils.exe").createNewFile();
+        }
 
         String hdfsHost = System.getenv().getOrDefault("HDFS_NAMENODE", "localhost");
 
