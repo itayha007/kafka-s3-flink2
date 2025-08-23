@@ -75,6 +75,24 @@
             <artifactId>flink-avro</artifactId>
             <version>${flink.version}</version>
         </dependency>
+        <!-- Flink File Connector for HDFS sink -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-files</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <!-- Hadoop filesystem support -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-hadoop-fs</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <!-- Hadoop client to provide HDFS implementation -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>3.2.1</version>
+        </dependency>
 
         <!-- Lombok (optional, for less boilerplate) -->
         <dependency>

@@ -69,13 +69,50 @@ services:
       TOPIC_NAME: input
       BUCKET_NAME: dev-bucket
       S3_ENDPOINT: http://localstack:4566   # from inside docker network
-      TOTAL_MESSAGES: "100"
+      TOTAL_MESSAGES: "1000"
       LARGE_COUNT: "1"          # set 5–10 as you prefer
       LARGE_SIZE_MB: "500"
-      SMALL_SIZE_BYTES: "1024"
+      SMALL_SIZE_BYTES: "5024"
     command: >
       sh -c "pip install boto3 kafka-python && python init-all.py"
     restart: "no"
+
+  hdfs-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-namenode
+    networks:
+      - local-kafka
+    ports:
+      - "8020:8020"
+      - "9870:9870"
+    environment:
+      - CLUSTER_NAME=local-hadoop
+      - HDFS_CONF_dfs_permissions_enabled=false
+    volumes:
+      - hdfs-namenode:/hadoop/dfs/namenode
+
+  hdfs-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-datanode
+    networks:
+      - local-kafka
+    depends_on:
+      - hdfs-namenode
+    ports:
+      - "9864:9864"
+      - "9866:9866"
+    environment:
+      - CLUSTER_NAME=local-hadoop
+      - CORE_CONF_fs_defaultFS=hdfs://hdfs-namenode:8020
+      - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+      - HDFS_CONF_dfs_permissions_enabled=false
+      - HDFS_CONF_dfs_datanode_address=0.0.0.0:9866
+      - HDFS_CONF_dfs_datanode_http_address=0.0.0.0:9864
+      - HDFS_CONF_dfs_datanode_use_datanode_hostname=true
+      - HDFS_CONF_dfs_datanode_hostname=localhost
+      - HDFS_CONF_dfs_client_use_datanode_hostname=true
+    volumes:
+      - hdfs-datanode:/hadoop/dfs/datanode
 
   kafka-ui:
     image: provectuslabs/kafka-ui
@@ -91,3 +128,8 @@ services:
       - KAFKA_CLUSTERS_0_NAME=broker
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=broker:9093
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
+volumes:
+  hdfs-namenode:
+  hdfs-datanode:
+
