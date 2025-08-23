@@ -3,3 +3,9 @@ kafka:
   bootstrap-servers: localhost:9092
   group-id: max-bot
 
+
+s3:
+  endpoint: http://localhost:4566
+  region: us-east-1
+  access-key: test
+  secret-key: test

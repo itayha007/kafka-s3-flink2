@@ -1,14 +1,16 @@
 package org.example.configuration;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.RequiredArgsConstructor;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.DeploymentOptions;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.example.deserialize.MessageDeserializer;
+import org.example.models.Message;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,18 +29,19 @@ public class FlinkConfiguration {
     }
 
     @Bean
-    public KafkaSource<String> kafkaSource() {
-        return KafkaSource.<String>builder()
+    public KafkaSource<Message<ArrayNode>> kafkaSource() {
+        return KafkaSource.<Message<ArrayNode>>builder()
                 .setBootstrapServers(this.kafkaConfiguration.getBootstrapServers())
                 .setTopics(this.kafkaConfiguration.getTopic())
                 .setGroupId(this.kafkaConfiguration.getGroupId())
                 .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
-                .setValueOnlyDeserializer(new SimpleStringSchema())
+                .setDeserializer(new MessageDeserializer()) // <-- custom deserializer
                 .build();
     }
 
+
     @Bean
-    public WatermarkStrategy<String> noWatermarks() {
+    public WatermarkStrategy<Message<ArrayNode>> noWatermarks() {
         return WatermarkStrategy.noWatermarks();
     }
 

@@ -70,7 +70,7 @@ services:
       BUCKET_NAME: dev-bucket
       S3_ENDPOINT: http://localstack:4566   # from inside docker network
       TOTAL_MESSAGES: "100"
-      LARGE_COUNT: "5"          # set 5–10 as you prefer
+      LARGE_COUNT: "1"          # set 5–10 as you prefer
       LARGE_SIZE_MB: "500"
       SMALL_SIZE_BYTES: "1024"
     command: >
