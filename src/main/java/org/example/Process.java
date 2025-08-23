@@ -5,7 +5,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.flink.connector.file.sink.FileSink;
 import org.apache.flink.core.fs.Path;
-import org.apache.flink.formats.avro.AvroKryoSerializer;
+import org.apache.flink.formats.avro.typeutils.AvroKryoSerializer;
 import org.apache.flink.formats.avro.AvroWriters;
 import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
@@ -32,7 +32,10 @@ public class Process implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String hadoopHome = System.getenv().getOrDefault("HADOOP_HOME", "/tmp");
+        String hadoopHome = System.getenv("HADOOP_HOME");
+        if (hadoopHome == null || hadoopHome.isEmpty()) {
+            hadoopHome = new File(System.getProperty("java.io.tmpdir"), "hadoop").getAbsolutePath();
+        }
         System.setProperty("hadoop.home.dir", hadoopHome);
         new File(hadoopHome).mkdirs();
 
