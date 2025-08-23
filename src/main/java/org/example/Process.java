@@ -30,25 +30,6 @@ public class Process implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String hadoopHome = System.getenv("HADOOP_HOME");
-        if (hadoopHome == null || hadoopHome.isEmpty()) {
-            hadoopHome = new File(System.getProperty("java.io.tmpdir"), "hadoop").getAbsolutePath();
-        }
-        System.setProperty("hadoop.home.dir", hadoopHome);
-
-        File homeDir = new File(hadoopHome);
-        File binDir = new File(homeDir, "bin");
-        if (!binDir.exists()) {
-            binDir.mkdirs();
-            new File(binDir, "winutils.exe").createNewFile();
-        }
-
-        String hdfsHost = System.getenv().getOrDefault("HDFS_NAMENODE", "localhost");
-
-        // run HDFS operations as root so the sink can create output directories
-        System.setProperty("HADOOP_USER_NAME", "root");
-        System.setProperty("dfs.client.use.datanode.hostname", "true");
-
         DataStream<GenericRecord> records = AsyncDataStream.unorderedWait(
                         this.dataStreamService.kafkaDataStream()
                                 .filter(Objects::nonNull),
@@ -65,7 +46,7 @@ public class Process implements CommandLineRunner {
                 .map(new ArrayNodeToGenericRecordMapFunction())
                 .returns(new GenericRecordAvroTypeInfo(ArrayNodeToGenericRecordMapFunction.getSchema()));
 
-        Path outputPath = new Path(String.format("hdfs://%s:8020/flink/output", hdfsHost));
+        Path outputPath = new Path(String.format("hdfs://%s:8020/flink/output", "localhost"));
 
         records.sinkTo(FileSink.forBulkFormat(
                 outputPath,
