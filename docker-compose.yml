@@ -80,11 +80,7 @@ services:
   hdfs-namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-namenode
-    networks:
-      - local-kafka
-    ports:
-      - "8020:8020"   # RPC
-      - "9870:9870"   # Web UI
+    network_mode: host
     environment:
       - CLUSTER_NAME=local-hadoop
       - HDFS_CONF_dfs_permissions_enabled=false
@@ -94,23 +90,19 @@ services:
   hdfs-datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-datanode
-    networks:
-      - local-kafka
+    network_mode: host
     depends_on:
       - hdfs-namenode
-    ports:
-      - "9864:9864"   # Web UI
-      - "9866:9866"   # Data transfer
     environment:
       - CLUSTER_NAME=local-hadoop
-      - CORE_CONF_fs_defaultFS=hdfs://hdfs-namenode:8020
+      - CORE_CONF_fs_defaultFS=hdfs://localhost:8020
       - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
       - HDFS_CONF_dfs_permissions_enabled=false
+      - HDFS_CONF_dfs_datanode_address=0.0.0.0:9866
+      - HDFS_CONF_dfs_datanode_http_address=0.0.0.0:9864
       - HDFS_CONF_dfs_datanode_use_datanode_hostname=true
+      - HDFS_CONF_dfs_datanode_hostname=localhost
       - HDFS_CONF_dfs_client_use_datanode_hostname=true
-      - HDFS_CONF_dfs_datanode_hostname=host.docker.internal
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - hdfs-datanode:/hadoop/dfs/datanode
 
