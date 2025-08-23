@@ -78,7 +78,7 @@ services:
     restart: "no"
 
   hdfs-namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.3.1-java11
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-namenode
     networks:
       - local-kafka
@@ -90,7 +90,7 @@ services:
       - hdfs-namenode:/hadoop/dfs/namenode
 
   hdfs-datanode:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.3.1-java11
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-datanode
     networks:
       - local-kafka
