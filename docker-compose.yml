@@ -78,8 +78,7 @@ services:
     restart: "no"
 
   hdfs-namenode:
-    image: ghcr.io/apache/hadoop:3.3.6
-    command: ["hdfs", "namenode"]
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-namenode
     networks:
       - local-kafka
@@ -93,8 +92,7 @@ services:
       - hdfs-namenode:/hadoop/dfs/namenode
 
   hdfs-datanode:
-    image: ghcr.io/apache/hadoop:3.3.6
-    command: ["hdfs", "datanode"]
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: hdfs-datanode
     networks:
       - local-kafka
