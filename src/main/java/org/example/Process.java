@@ -1,10 +1,13 @@
 package org.example;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.flink.connector.file.sink.FileSink;
 import org.apache.flink.core.fs.Path;
+import org.apache.flink.formats.avro.AvroKryoSerializer;
 import org.apache.flink.formats.avro.AvroWriters;
+import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -35,6 +38,10 @@ public class Process implements CommandLineRunner {
 
         String hdfsHost = System.getenv().getOrDefault("HDFS_NAMENODE", "localhost");
 
+        // ensure GenericRecord uses Avro serialization instead of Kryo's default
+        this.environment.getConfig()
+                .registerTypeWithKryoSerializer(GenericData.Record.class, AvroKryoSerializer.class);
+
         DataStream<GenericRecord> records = AsyncDataStream.unorderedWait(
                         this.dataStreamService.kafkaDataStream()
                                 .filter(Objects::nonNull),
@@ -48,7 +55,8 @@ public class Process implements CommandLineRunner {
                         TimeUnit.SECONDS,
                         5000
                 )
-                .map(new ArrayNodeToGenericRecordMapFunction());
+                .map(new ArrayNodeToGenericRecordMapFunction())
+                .returns(new GenericRecordAvroTypeInfo(ArrayNodeToGenericRecordMapFunction.getSchema()));
 
         Path outputPath = new Path(String.format("hdfs://%s:8020/flink/output", hdfsHost));
 
