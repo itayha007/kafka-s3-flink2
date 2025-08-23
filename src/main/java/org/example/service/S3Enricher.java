@@ -11,7 +11,6 @@ import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 import org.example.models.Message;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.BytesWrapper;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
@@ -21,10 +20,13 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @RequiredArgsConstructor
 public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<ArrayNode>> {
@@ -67,9 +69,18 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
         this.asyncQueryFromS3(
                         message.getKafkaReference().getBucket(),
                         message.getKafkaReference().getKeys().get(0))
-                .thenApply(payload -> {
-                    ArrayNode array = this.toArrayNode(payload);
-                    return new Message<>(message.getHeaders(), array, null);
+                .thenApply(path -> {
+                    try (InputStream input = Files.newInputStream(path)) {
+                        ArrayNode array = this.toArrayNode(input);
+                        return new Message<>(message.getHeaders(), array, null);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException ignored) {
+                        }
+                    }
                 })
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
@@ -80,9 +91,9 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
                 });
     }
 
-    private ArrayNode toArrayNode(byte[] payload) {
+    private ArrayNode toArrayNode(InputStream payload) {
         try {
-            if (payload == null || payload.length == 0) {
+            if (payload == null) {
                 return this.objectMapper.createArrayNode();
             }
             JsonNode root = this.objectMapper.readTree(payload);
@@ -99,12 +110,20 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
     }
 
 
-    public CompletableFuture<byte[]> asyncQueryFromS3(String bucket, String key) {
+    public CompletableFuture<Path> asyncQueryFromS3(String bucket, String key) {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
                 .build();
-        return this.s3AsyncClient.getObject(getObjectRequest, AsyncResponseTransformer.toBytes())
-                .thenApply(BytesWrapper::asByteArray);
+        try {
+            Path tempFile = Files.createTempFile("s3-enricher-", ".tmp");
+            return this.s3AsyncClient
+                    .getObject(getObjectRequest, AsyncResponseTransformer.toFile(tempFile))
+                    .thenApply(response -> tempFile);
+        } catch (IOException e) {
+            CompletableFuture<Path> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
+        }
     }
 }
