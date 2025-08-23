@@ -1,11 +1,9 @@
 package org.example;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.flink.connector.file.sink.FileSink;
 import org.apache.flink.core.fs.Path;
-import org.apache.flink.formats.avro.typeutils.AvroKryoSerializer;
 import org.apache.flink.formats.avro.AvroWriters;
 import org.apache.flink.formats.avro.typeutils.GenericRecordAvroTypeInfo;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
@@ -50,10 +48,6 @@ public class Process implements CommandLineRunner {
         // run HDFS operations as root so the sink can create output directories
         System.setProperty("HADOOP_USER_NAME", "root");
         System.setProperty("dfs.client.use.datanode.hostname", "true");
-
-        // ensure GenericRecord uses Avro serialization instead of Kryo's default
-        this.environment.getConfig()
-                .registerTypeWithKryoSerializer(GenericData.Record.class, AvroKryoSerializer.class);
 
         DataStream<GenericRecord> records = AsyncDataStream.unorderedWait(
                         this.dataStreamService.kafkaDataStream()
