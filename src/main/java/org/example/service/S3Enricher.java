@@ -11,18 +11,17 @@ import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 import org.example.models.Message;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.async.AsyncResponseTransformer;
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.nio.file.Files;
@@ -35,18 +34,14 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
     private final String accessKey;
     private final String secretKey;
     private ObjectMapper objectMapper;
-    private S3AsyncClient s3AsyncClient;
-    private SdkAsyncHttpClient httpClient;
+    private S3Client s3Client;
+    private SdkHttpClient httpClient;
+    private java.util.concurrent.ExecutorService downloadExecutor;
 
     @Override
     public void open(Configuration parameters) {
-        this.httpClient = NettyNioAsyncHttpClient.builder()
-                .connectionTimeout(Duration.ofSeconds(30))
-                .readTimeout(Duration.ofMinutes(2))
-                .writeTimeout(Duration.ofMinutes(2))
-                .maxConcurrency(64)
-                .build();
-        this.s3AsyncClient = S3AsyncClient.builder()
+        this.httpClient = UrlConnectionHttpClient.builder().build();
+        this.s3Client = S3Client.builder()
                 .httpClient(this.httpClient)
                 .region(Region.of(this.region))
                 .credentialsProvider(StaticCredentialsProvider.create(
@@ -56,17 +51,20 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
                         .pathStyleAccessEnabled(true)
                         .build())
                 .build();
-
+        this.downloadExecutor = java.util.concurrent.Executors.newCachedThreadPool();
         this.objectMapper = new ObjectMapper();
     }
 
     @Override
     public void close() {
-        if (this.s3AsyncClient != null) {
-            this.s3AsyncClient.close();
+        if (this.s3Client != null) {
+            this.s3Client.close();
         }
         if (this.httpClient != null) {
             this.httpClient.close();
+        }
+        if (this.downloadExecutor != null) {
+            this.downloadExecutor.shutdown();
         }
     }
 
@@ -122,19 +120,18 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
 
 
     public CompletableFuture<Path> asyncQueryFromS3(String bucket, String key) {
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .build();
-        try {
-            Path tempFile = Files.createTempFile("s3-enricher-", ".tmp");
-            return this.s3AsyncClient
-                    .getObject(getObjectRequest, AsyncResponseTransformer.toFile(tempFile))
-                    .thenApply(response -> tempFile);
-        } catch (IOException e) {
-            CompletableFuture<Path> failed = new CompletableFuture<>();
-            failed.completeExceptionally(e);
-            return failed;
-        }
+        return CompletableFuture.supplyAsync(() -> {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .build();
+            try {
+                Path tempFile = Files.createTempFile("s3-enricher-", ".tmp");
+                this.s3Client.getObject(getObjectRequest, ResponseTransformer.toFile(tempFile));
+                return tempFile;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, this.downloadExecutor);
     }
 }
