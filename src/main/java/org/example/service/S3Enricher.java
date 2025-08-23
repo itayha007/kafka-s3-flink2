@@ -68,16 +68,11 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
                         message.getKafkaReference().getBucket(),
                         message.getKafkaReference().getKeys().get(0))
                 .thenApply(payload -> {
-                    try {
-                        ArrayNode array = this.toArrayNode(payload);
-                        return new Message<>(message.getHeaders(), array, null);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to parse S3 payload", e);
-                    }
+                    ArrayNode array = this.toArrayNode(payload);
+                    return new Message<>(message.getHeaders(), array, null);
                 })
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
-                        // On failure, pass the original message through unchanged
                         resultFuture.complete(Collections.singletonList(message));
                     } else {
                         resultFuture.complete(Collections.singletonList(result));
@@ -85,18 +80,22 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
                 });
     }
 
-    private ArrayNode toArrayNode(byte[] payload) throws IOException {
-        if (payload == null || payload.length == 0) {
+    private ArrayNode toArrayNode(byte[] payload) {
+        try {
+            if (payload == null || payload.length == 0) {
+                return this.objectMapper.createArrayNode();
+            }
+            JsonNode root = this.objectMapper.readTree(payload);
+            if (root == null || root.isNull()) {
+                return this.objectMapper.createArrayNode();
+            }
+            if (root.isArray()) {
+                return (ArrayNode) root;
+            }
+            return this.objectMapper.createArrayNode().add(root);
+        } catch (IOException e) {
             return this.objectMapper.createArrayNode();
         }
-        JsonNode root = this.objectMapper.readTree(payload);
-        if (root == null || root.isNull()) {
-            return this.objectMapper.createArrayNode();
-        }
-        if (root.isArray()) {
-            return (ArrayNode) root;
-        }
-        return this.objectMapper.createArrayNode().add(root);
     }
 
 
