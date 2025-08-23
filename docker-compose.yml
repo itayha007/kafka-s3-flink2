@@ -129,6 +129,64 @@ services:
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=broker:9093
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
 
+  hive-metastore-postgresql:
+    image: postgres:10
+    container_name: hive-metastore-postgresql
+    networks:
+      - local-kafka
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+
+  hive-metastore:
+    image: bde2020/hive-metastore:3.1.2
+    container_name: hive-metastore
+    networks:
+      - local-kafka
+    depends_on:
+      - hive-metastore-postgresql
+      - hdfs-namenode
+      - hdfs-datanode
+    ports:
+      - "9083:9083"
+    environment:
+      HIVE_SITE_CONF_fs_defaultFS: hdfs://hdfs-namenode:8020
+      METASTORE_DB_HOST: hive-metastore-postgresql
+      METASTORE_DB_PORT: 5432
+      METASTORE_DB_USER: hive
+      METASTORE_DB_PASSWORD: hive
+
+  hive-server:
+    image: bde2020/hive:3.1.2
+    container_name: hive-server
+    networks:
+      - local-kafka
+    depends_on:
+      - hive-metastore
+      - hdfs-namenode
+      - hdfs-datanode
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    environment:
+      HIVE_SITE_CONF_fs_defaultFS: hdfs://hdfs-namenode:8020
+      HIVE_SITE_CONF_dfs.replication: 1
+      HIVE_METASTORE_URI: thrift://hive-metastore:9083
+      SERVICE_PRECONDITION: hive-metastore:9083 hdfs-namenode:8020
+
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
+    networks:
+      - local-kafka
+    depends_on:
+      - hive-metastore
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./trino/catalog:/etc/trino/catalog
+
 volumes:
   hdfs-namenode:
   hdfs-datanode:
