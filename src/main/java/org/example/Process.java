@@ -43,6 +43,7 @@ public class Process implements CommandLineRunner {
 
         // run HDFS operations as root so the sink can create output directories
         System.setProperty("HADOOP_USER_NAME", "root");
+        System.setProperty("dfs.client.use.datanode.hostname", "true");
 
         // ensure GenericRecord uses Avro serialization instead of Kryo's default
         this.environment.getConfig()
