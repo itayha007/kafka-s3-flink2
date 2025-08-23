@@ -78,9 +78,8 @@ public class Process implements CommandLineRunner {
         Path outputPath = new Path(String.format("hdfs://%s:8020/flink/output", hdfsHost));
 
         ParquetWriterFactory<GenericRecord> parquetFactory = ParquetAvroWriters
-                .forGenericRecord(
-                        ArrayNodeToGenericRecordMapFunction.getSchema(),
-                        CompressionCodecName.SNAPPY);
+                .forGenericRecord(ArrayNodeToGenericRecordMapFunction.getSchema())
+                .withCompressionCodecName(CompressionCodecName.SNAPPY);
 
         OutputFileConfig fileConfig = OutputFileConfig.builder()
                 .withPartPrefix("data")
