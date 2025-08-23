@@ -36,17 +36,18 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
     private final String secretKey;
     private ObjectMapper objectMapper;
     private S3AsyncClient s3AsyncClient;
+    private SdkAsyncHttpClient httpClient;
 
     @Override
     public void open(Configuration parameters) {
-        SdkAsyncHttpClient http = NettyNioAsyncHttpClient.builder()
+        this.httpClient = NettyNioAsyncHttpClient.builder()
                 .connectionTimeout(Duration.ofSeconds(30))
                 .readTimeout(Duration.ofMinutes(2))
                 .writeTimeout(Duration.ofMinutes(2))
                 .maxConcurrency(64)
                 .build();
         this.s3AsyncClient = S3AsyncClient.builder()
-                .httpClient(http)
+                .httpClient(this.httpClient)
                 .region(Region.of(this.region))
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(this.accessKey, this.secretKey)))
@@ -57,6 +58,16 @@ public class S3Enricher extends RichAsyncFunction<Message<ArrayNode>, Message<Ar
                 .build();
 
         this.objectMapper = new ObjectMapper();
+    }
+
+    @Override
+    public void close() {
+        if (this.s3AsyncClient != null) {
+            this.s3AsyncClient.close();
+        }
+        if (this.httpClient != null) {
+            this.httpClient.close();
+        }
     }
 
     @Override
